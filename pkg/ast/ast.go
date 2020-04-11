@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/alenkacz/interpreter-book/pkg/token"
+	"strconv"
 )
 
 type Node interface {
@@ -83,6 +84,14 @@ type Identifier struct {
 func (*Identifier) expressionNode() {}
 func (i *Identifier) String() string {
 	return i.Name
+}
+
+type Boolean struct {
+	Value bool
+}
+func (*Boolean) expressionNode() {}
+func (i *Boolean) String() string {
+	return strconv.FormatBool(i.Value)
 }
 
 type InfixExpression struct {

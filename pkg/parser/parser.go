@@ -32,6 +32,8 @@ func New(tokenizer *tokenizer.Tokenizer) *Parser {
 	p.parseFns = make(map[token.TokenType]prefixParseFn)
 	p.parseFns[token.INT] = p.parseIntegerLiteral
 	p.parseFns[token.IDENT] = p.parseIdentifier
+	p.parseFns[token.TRUE] = p.parseBoolean
+	p.parseFns[token.FALSE] = p.parseBoolean
 
 	p.readNextToken()
 	p.readNextToken()
@@ -142,6 +144,10 @@ func (p *Parser) parseIdentifier() ast.Expression {
 	return &ast.Identifier{
 		Name: p.currentToken.Literal,
 	}
+}
+
+func (p *Parser) parseBoolean() ast.Expression {
+	return &ast.Boolean{Value: p.currentToken.Type == token.TRUE}
 }
 
 func (p *Parser) peekError(t token.TokenType) bool {
