@@ -31,6 +31,7 @@ func New(tokenizer *tokenizer.Tokenizer) *Parser {
 
 	p.parseFns = make(map[token.TokenType]prefixParseFn)
 	p.parseFns[token.INT] = p.parseIntegerLiteral
+	p.parseFns[token.IDENT] = p.parseIdentifier
 
 	p.readNextToken()
 	p.readNextToken()
@@ -134,6 +135,12 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	value, _ := strconv.ParseInt(p.currentToken.Literal, 0, 64)
 	return &ast.IntegerLiteral{
 		Value: value,
+	}
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{
+		Name: p.currentToken.Literal,
 	}
 }
 

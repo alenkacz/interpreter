@@ -74,7 +74,15 @@ type IntegerLiteral struct {
 }
 func (*IntegerLiteral) expressionNode() {}
 func (i *IntegerLiteral) String() string {
-	return string(i.Value)
+	return fmt.Sprintf("%d", i.Value)
+}
+
+type Identifier struct {
+	Name string
+}
+func (*Identifier) expressionNode() {}
+func (i *Identifier) String() string {
+	return i.Name
 }
 
 type InfixExpression struct {
