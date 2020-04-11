@@ -76,3 +76,13 @@ func (*IntegerLiteral) expressionNode() {}
 func (i *IntegerLiteral) String() string {
 	return string(i.Value)
 }
+
+type InfixExpression struct {
+	Left Expression
+	Right Expression
+	Operator string
+}
+func (*InfixExpression) expressionNode() {}
+func (i *InfixExpression) String() string {
+	return fmt.Sprintf("(%s %s %s)", i.Left.String(), i.Operator, i.Right.String())
+}

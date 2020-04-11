@@ -86,27 +86,48 @@ func (p *Parser) ParseProgram() *ast.Program {
 			}
 			result.Statements = append(result.Statements, &ast.ReturnStatement{})
 		default:
-			result.Statements = append(result.Statements, p.parseExpression())
+			result.Statements = append(result.Statements, p.parseExpressionStatement())
 			p.readNextToken()
 		}
 	}
 	return result
 }
 
-func (p *Parser) parseExpression() ast.Statement {
+func (p *Parser) parseExpressionStatement() ast.Statement {
+	stmt := &ast.ExpressionStatement{}
+
+	stmt.Expression = p.parseExpression()
+
+	if p.nextToken.Type == token.SEMICOLON {
+		p.readNextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseExpression() ast.Expression {
 	parseFn, ok := p.parseFns[p.currentToken.Type]
 	if !ok {
 		p.errors = append(p.errors, fmt.Sprintf("Unknown token type %s, no parseFn found", p.currentToken.Type))
 		return nil
 	}
-	expression := parseFn()
+	left := parseFn()
+
 	for p.nextToken.Type != token.SEMICOLON {
-		//  TODO
+		p.readNextToken()
+
+		expression := &ast.InfixExpression{
+			Operator: p.currentToken.Literal,
+			Left:     left,
+		}
+
+		p.readNextToken()
+		expression.Right = p.parseExpression()
+
+		return expression
 	}
 	p.readNextToken()
-	return &ast.ExpressionStatement{
-		Expression: expression,
-	}
+	return left
 }
 
 func (p *Parser) parseIntegerLiteral() ast.Expression {
