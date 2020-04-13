@@ -29,7 +29,7 @@ const (
 	// keywords
 	LET = "let"
 	FUNC = "fn"
-	IF = "let"
+	IF = "if"
 	ELSE = "else"
 	RETURN = "return"
 	TRUE = "true"

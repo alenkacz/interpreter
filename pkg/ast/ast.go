@@ -62,7 +62,21 @@ type ExpressionStatement struct {
 
 func (*ExpressionStatement) statementNode() {}
 func (e *ExpressionStatement) String() string {
-	return e.String()
+	return e.Expression.String()
+}
+
+type BlockStatement struct {
+	Statements []Statement
+}
+
+func (*BlockStatement) statementNode() {}
+func (b *BlockStatement) String() string {
+	var buf bytes.Buffer
+	for _, s := range b.Statements {
+		buf.WriteString(s.String())
+		buf.WriteString("\n")
+	}
+	return buf.String()
 }
 
 type Expression interface {
@@ -102,4 +116,31 @@ type InfixExpression struct {
 func (*InfixExpression) expressionNode() {}
 func (i *InfixExpression) String() string {
 	return fmt.Sprintf("(%s %s %s)", i.Left.String(), i.Operator, i.Right.String())
+}
+
+type PrefixExpression struct {
+	Right Expression
+	Operator string
+}
+func (*PrefixExpression) expressionNode() {}
+func (i *PrefixExpression) String() string {
+	return fmt.Sprintf("(%s%s)", i.Operator, i.Right.String())
+}
+
+type IfExpression struct {
+	Condition Expression
+	Block *BlockStatement
+	Alternative *BlockStatement
+}
+func (*IfExpression) expressionNode() {}
+func (i *IfExpression) String() string {
+	var buf bytes.Buffer
+	buf.WriteString(fmt.Sprintf("if(%s) {\n", i.Condition.String()))
+	buf.WriteString(i.Block.String())
+	if i.Alternative != nil {
+		buf.WriteString("} else {\n")
+		buf.WriteString(i.Alternative.String())
+		buf.WriteString("}\n")
+	}
+	return buf.String()
 }
