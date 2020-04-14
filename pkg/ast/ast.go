@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/alenkacz/interpreter-book/pkg/token"
 	"strconv"
+	"strings"
 )
 
 type Node interface {
@@ -142,5 +143,20 @@ func (i *IfExpression) String() string {
 		buf.WriteString(i.Alternative.String())
 		buf.WriteString("}\n")
 	}
+	return buf.String()
+}
+
+type FunctionLiteral struct {
+	Params []*Identifier
+	Block *BlockStatement
+}
+func (*FunctionLiteral) expressionNode() {}
+func (f *FunctionLiteral) String() string {
+	var buf bytes.Buffer
+	var paramNames []string
+	for _, i := range f.Params {
+		paramNames = append(paramNames, i.String())
+	}
+	buf.WriteString(fmt.Sprintf("fn(%s){ %s }", strings.Join(paramNames, ","), f.Block.String()))
 	return buf.String()
 }

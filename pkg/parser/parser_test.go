@@ -548,3 +548,52 @@ func testInfixExpression(t *testing.T, exp ast.Expression, left interface{},
 
 	return true
 }
+
+func TestFunctionLiteralParsing(t *testing.T) {
+	input := `fn(x, y) { x + y; }`
+
+	l := tokenizer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	if len(p.errors) > 0 {
+		t.Fatalf("%s: Error(s) in ParseProgram(): %v", input, strings.Join(p.errors, ","))
+	}
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain %d statements. got=%d\n",
+			1, len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T",
+			program.Statements[0])
+	}
+
+	function, ok := stmt.Expression.(*ast.FunctionLiteral)
+	if !ok {
+		t.Fatalf("stmt.Expression is not ast.FunctionLiteral. got=%T",
+			stmt.Expression)
+	}
+
+	if len(function.Params) != 2 {
+		t.Fatalf("function literal parameters wrong. want 2, got=%d\n",
+			len(function.Params))
+	}
+
+	testLiteralExpression(t, function.Params[0], "x")
+	testLiteralExpression(t, function.Params[1], "y")
+
+	if len(function.Block.Statements) != 1 {
+		t.Fatalf("function.Body.Statements has not 1 statements. got=%d\n",
+			len(function.Block.Statements))
+	}
+
+	bodyStmt, ok := function.Block.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("function body stmt is not ast.ExpressionStatement. got=%T",
+			function.Block.Statements[0])
+	}
+
+	testInfixExpression(t, bodyStmt.Expression, "x", "+", "y")
+}

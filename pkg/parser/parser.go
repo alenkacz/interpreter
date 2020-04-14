@@ -61,6 +61,7 @@ func New(tokenizer *tokenizer.Tokenizer) *Parser {
 	p.parseFns[token.PLUS] = p.parsePrefixExpression
 	p.parseFns[token.LPAREN] = p.parseGroupedExpression
 	p.parseFns[token.IF] = p.parseIfExpression
+	p.parseFns[token.FUNC] = p.parseFuncExpression
 
 	p.readNextToken()
 	p.readNextToken()
@@ -273,6 +274,51 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	return &ast.BlockStatement{
 		Statements: result,
 	}
+}
+
+func (p *Parser) parseFuncExpression() ast.Expression {
+	lit := &ast.FunctionLiteral{}
+
+	if !p.readNextIfNextTypeIs(token.LPAREN) {
+		return nil
+	}
+
+	lit.Params = p.parseFunctionParameters()
+
+	if !p.readNextIfNextTypeIs(token.LBRACE) {
+		return nil
+	}
+
+	lit.Block = p.parseBlockStatement()
+
+	return lit
+}
+
+func (p *Parser) parseFunctionParameters() []*ast.Identifier {
+	identifiers := []*ast.Identifier{}
+
+	if p.nextToken.Type == token.RPAREN {
+		p.readNextToken()
+		return identifiers
+	}
+
+	p.readNextToken()
+
+	ident := &ast.Identifier{Name: p.currentToken.Literal}
+	identifiers = append(identifiers, ident)
+
+	for p.nextToken.Type == token.COMMA {
+		p.readNextToken()
+		p.readNextToken()
+		ident := &ast.Identifier{Name: p.currentToken.Literal}
+		identifiers = append(identifiers, ident)
+	}
+
+	if !p.readNextIfNextTypeIs(token.RPAREN) {
+		return nil
+	}
+
+	return identifiers
 }
 
 func (p *Parser) readNextIfNextTypeIs(t token.TokenType) bool {
