@@ -91,29 +91,7 @@ func (p *Parser) parseNextStatement() ast.Statement {
 	case token.EOF:
 		break
 	case token.LET:
-		// identifier
-		if p.peekError(token.IDENT) {
-			break
-		}
-		p.readNextToken()
-		identifier := p.currentToken
-
-		// assign sign
-		if p.peekError(token.ASSIGN) {
-			break
-		}
-		p.readNextToken()
-
-		// expression
-		// TODO real expression parsing
-		for {
-			if p.currentToken.Type == token.SEMICOLON {
-				p.readNextToken()
-				break
-			}
-			p.readNextToken()
-		}
-		return ast.NewLetStatement(identifier)
+		return p.parseLetStatement()
 	case token.RETURN:
 		for {
 			if p.currentToken.Type == token.SEMICOLON {
@@ -128,6 +106,30 @@ func (p *Parser) parseNextStatement() ast.Statement {
 		return stmt
 	}
 	return nil
+}
+
+func (p *Parser) parseLetStatement() ast.Statement {
+	if !p.readNextIfNextTypeIs(token.IDENT) {
+		return nil
+	}
+	identifier := p.currentToken
+
+	// assign sign
+	if !p.readNextIfNextTypeIs(token.ASSIGN) {
+		return nil
+	}
+	p.readNextToken()
+
+	expression := p.parseExpression(LOWEST)
+
+	if !p.readNextIfNextTypeIs(token.SEMICOLON) {
+		return nil
+	}
+
+	return &ast.LetStatement{
+		Identifier: identifier,
+		Value: expression,
+	}
 }
 
 func (p *Parser) parseExpressionStatement() ast.Statement {

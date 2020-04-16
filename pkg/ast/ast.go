@@ -30,22 +30,16 @@ type Statement interface {
 }
 
 type LetStatement struct {
-	identifier *token.Token
-	value *Expression
-}
-
-func NewLetStatement(identifier *token.Token) *LetStatement {
-	return &LetStatement{
-		identifier: identifier,
-	}
+	Identifier *token.Token
+	Value      Expression
 }
 
 func (*LetStatement) statementNode() {}
 func (l *LetStatement) Name() string {
-	return l.identifier.Literal
+	return l.Identifier.Literal
 }
 func (l *LetStatement) String() string {
-	return fmt.Sprintf("let %s = ;", l.identifier)
+	return fmt.Sprintf("let %s = ;", l.Identifier)
 }
 
 type ReturnStatement struct {
