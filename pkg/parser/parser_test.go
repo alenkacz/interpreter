@@ -45,31 +45,38 @@ func TestLetStatements(t *testing.T) {
 }
 
 func TestReturnStatements(t *testing.T) {
-	input := `
-return 5;
-return 10;
-return 993322;
-`
-	l := tokenizer.New(input)
-	p := New(l)
-	program := p.ParseProgram()
-	if len(p.errors) > 0 {
-		t.Fatalf("Error(s) in ParseProgram(): %v", strings.Join(p.errors, ","))
+	tests := []struct {
+		input         string
+		expectedValue interface{}
+	}{
+		{"return 5;", 5},
+		{"return true;", true},
+		{"return foobar;", "foobar"},
 	}
-	if program == nil {
-		t.Fatalf("ParseProgram() returned nil")
-	}
-	if len(program.Statements) != 3 {
-		t.Fatalf("program.Statements does not contain 3 statements. got=%d",
-			len(program.Statements))
-	}
-	for _, stmt := range program.Statements {
-		_, ok := stmt.(*ast.ReturnStatement)
+
+	for _, tt := range tests {
+		l := tokenizer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		if len(p.errors) > 0 {
+			t.Fatalf("Error(s) in ParseProgram(): %v", strings.Join(p.errors, ","))
+		}
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statements. got=%d",
+				len(program.Statements))
+		}
+
+		stmt := program.Statements[0]
+		returnStmt, ok := stmt.(*ast.ReturnStatement)
 		if !ok {
-			t.Errorf("stmt not *ast.returnStatement. got=%T", stmt)
-			continue
+			t.Fatalf("stmt not *ast.ReturnStatement. got=%T", stmt)
+		}
+		if testLiteralExpression(t, returnStmt.ReturnValue, tt.expectedValue) {
+			return
 		}
 	}
+
 }
 
 func TestSimpleExpression(t *testing.T) {
