@@ -152,11 +152,22 @@ type FunctionLiteral struct {
 }
 func (*FunctionLiteral) expressionNode() {}
 func (f *FunctionLiteral) String() string {
-	var buf bytes.Buffer
 	var paramNames []string
 	for _, i := range f.Params {
 		paramNames = append(paramNames, i.String())
 	}
-	buf.WriteString(fmt.Sprintf("fn(%s){ %s }", strings.Join(paramNames, ","), f.Block.String()))
-	return buf.String()
+	return fmt.Sprintf("fn(%s){ %s }", strings.Join(paramNames, ","), f.Block.String())
+}
+
+type CallExpression struct {
+	Function *Identifier
+	Params []Expression
+}
+func (*CallExpression) expressionNode() {}
+func (f *CallExpression) String() string {
+	var paramExpressions []string
+	for _, p := range f.Params {
+		paramExpressions = append(paramExpressions, p.String())
+	}
+	return fmt.Sprintf("%s(%s)", f.Function.Name, strings.Join(paramExpressions, ","))
 }

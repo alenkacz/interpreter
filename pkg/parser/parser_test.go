@@ -597,3 +597,75 @@ func TestFunctionLiteralParsing(t *testing.T) {
 
 	testInfixExpression(t, bodyStmt.Expression, "x", "+", "y")
 }
+
+func TestFunctionParameterParsing(t *testing.T) {
+	tests := []struct {
+		input          string
+		expectedParams []string
+	}{
+		{input: "fn() {};", expectedParams: []string{}},
+		{input: "fn(x) {};", expectedParams: []string{"x"}},
+		{input: "fn(x, y, z) {};", expectedParams: []string{"x", "y", "z"}},
+	}
+
+	for _, tt := range tests {
+		l := tokenizer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		if len(p.errors) > 0 {
+			t.Fatalf("%s: Error(s) in ParseProgram(): %v", tt.input, strings.Join(p.errors, ","))
+		}
+
+		stmt := program.Statements[0].(*ast.ExpressionStatement)
+		function := stmt.Expression.(*ast.FunctionLiteral)
+
+		if len(function.Params) != len(tt.expectedParams) {
+			t.Errorf("length parameters wrong. want %d, got=%d\n",
+				len(tt.expectedParams), len(function.Params))
+		}
+
+		for i, ident := range tt.expectedParams {
+			testLiteralExpression(t, function.Params[i], ident)
+		}
+	}
+}
+
+func TestCallExpressionParsing(t *testing.T) {
+	input := "add(1, 2 * 3, 4 + 5);"
+
+	l := tokenizer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	if len(p.errors) > 0 {
+		t.Fatalf("%s: Error(s) in ParseProgram(): %v", input, strings.Join(p.errors, ","))
+	}
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain %d statements. got=%d\n",
+			1, len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt is not ast.ExpressionStatement. got=%T",
+			program.Statements[0])
+	}
+
+	exp, ok := stmt.Expression.(*ast.CallExpression)
+	if !ok {
+		t.Fatalf("stmt.Expression is not ast.CallExpression. got=%T",
+			stmt.Expression)
+	}
+
+	if !testIdentifier(t, exp.Function, "add") {
+		return
+	}
+
+	if len(exp.Params) != 3 {
+		t.Fatalf("wrong length of arguments. got=%d", len(exp.Params))
+	}
+
+	testLiteralExpression(t, exp.Params[0], 1)
+	testInfixExpression(t, exp.Params[1], 2, "*", 3)
+	testInfixExpression(t, exp.Params[2], 4, "+", 5)
+}

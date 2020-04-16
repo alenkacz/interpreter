@@ -191,9 +191,14 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {
-	return &ast.Identifier{
+	identifier := &ast.Identifier{
 		Name: p.currentToken.Literal,
 	}
+	if p.nextToken.Type == token.LPAREN {
+		p.readNextToken()
+		return p.parseCallExpression(identifier)
+	}
+	return identifier
 }
 
 func (p *Parser) parseBoolean() ast.Expression {
@@ -319,6 +324,42 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 	}
 
 	return identifiers
+}
+
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	ident, ok := function.(*ast.Identifier)
+	if !ok {
+		p.errors = append(p.errors, fmt.Sprintf("expecting identifier in the beginning of call expression, got: %s", ident))
+		return nil
+	}
+	exp := &ast.CallExpression{Function: ident}
+	exp.Params = p.parseCallArguments()
+	return exp
+}
+
+func (p *Parser) parseCallArguments() []ast.Expression {
+	args := []ast.Expression{}
+
+	if p.nextToken.Type == token.RPAREN {
+		// empty args
+		p.readNextToken()
+		return args
+	}
+
+	p.readNextToken()
+	args = append(args, p.parseExpression(LOWEST))
+
+	for p.nextToken.Type == token.COMMA {
+		p.readNextToken()
+		p.readNextToken()
+		args = append(args, p.parseExpression(LOWEST))
+	}
+
+	if !p.readNextIfNextTypeIs(token.RPAREN) {
+		return nil
+	}
+
+	return args
 }
 
 func (p *Parser) readNextIfNextTypeIs(t token.TokenType) bool {
