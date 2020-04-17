@@ -23,8 +23,8 @@ func TestLetStatements(t *testing.T) {
 		l := tokenizer.New(tt.input)
 		p := New(l)
 		program := p.ParseProgram()
-		if len(p.errors) > 0 {
-			t.Fatalf("Error(s) in ParseProgram(): %v", strings.Join(p.errors, ","))
+		if len(p.Errors) > 0 {
+			t.Fatalf("Error(s) in ParseProgram(): %v", strings.Join(p.Errors, ","))
 		}
 
 		if len(program.Statements) != 1 {
@@ -58,8 +58,8 @@ func TestReturnStatements(t *testing.T) {
 		l := tokenizer.New(tt.input)
 		p := New(l)
 		program := p.ParseProgram()
-		if len(p.errors) > 0 {
-			t.Fatalf("Error(s) in ParseProgram(): %v", strings.Join(p.errors, ","))
+		if len(p.Errors) > 0 {
+			t.Fatalf("Error(s) in ParseProgram(): %v", strings.Join(p.Errors, ","))
 		}
 
 		if len(program.Statements) != 1 {
@@ -95,8 +95,8 @@ func TestSimpleExpression(t *testing.T) {
 		l := tokenizer.New(tt.input)
 		p := New(l)
 		program := p.ParseProgram()
-		if len(p.errors) > 0 {
-			t.Fatalf("Error(s) in ParseProgram(): %v", strings.Join(p.errors, ","))
+		if len(p.Errors) > 0 {
+			t.Fatalf("Error(s) in ParseProgram(): %v", strings.Join(p.Errors, ","))
 		}
 		if len(program.Statements) != 1 {
 			t.Fatalf("program has not enough statements. got=%d",
@@ -148,8 +148,8 @@ func TestParsingInfixExpressions(t *testing.T) {
 		l := tokenizer.New(tt.input)
 		p := New(l)
 		program := p.ParseProgram()
-		if len(p.errors) > 0 {
-			t.Fatalf("%s: Error(s) in ParseProgram(): %v", tt.input, strings.Join(p.errors, ","))
+		if len(p.Errors) > 0 {
+			t.Fatalf("%s: Error(s) in ParseProgram(): %v", tt.input, strings.Join(p.Errors, ","))
 		}
 		if len(program.Statements) != 1 {
 			t.Fatalf("program.Statements does not contain %d statements. got=%d\n",
@@ -363,8 +363,8 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		l := tokenizer.New(tt.input)
 		p := New(l)
 		program := p.ParseProgram()
-		if len(p.errors) > 0 {
-			t.Fatalf("%s: Error(s) in ParseProgram(): %v", tt.input, strings.Join(p.errors, ","))
+		if len(p.Errors) > 0 {
+			t.Fatalf("%s: Error(s) in ParseProgram(): %v", tt.input, strings.Join(p.Errors, ","))
 		}
 
 		actual := program.String()
@@ -392,8 +392,8 @@ func TestParsingPrefixExpressions(t *testing.T) {
 		l := tokenizer.New(tt.input)
 		p := New(l)
 		program := p.ParseProgram()
-		if len(p.errors) > 0 {
-			t.Fatalf("%s: Error(s) in ParseProgram(): %v", tt.input, strings.Join(p.errors, ","))
+		if len(p.Errors) > 0 {
+			t.Fatalf("%s: Error(s) in ParseProgram(): %v", tt.input, strings.Join(p.Errors, ","))
 		}
 
 		if len(program.Statements) != 1 {
@@ -427,8 +427,8 @@ func TestIfExpression(t *testing.T) {
 	l := tokenizer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	if len(p.errors) > 0 {
-		t.Fatalf("%s: Error(s) in ParseProgram(): %v", input, strings.Join(p.errors, ","))
+	if len(p.Errors) > 0 {
+		t.Fatalf("%s: Error(s) in ParseProgram(): %v", input, strings.Join(p.Errors, ","))
 	}
 
 	if len(program.Statements) != 1 {
@@ -478,8 +478,8 @@ func TestIfElseExpression(t *testing.T) {
 	l := tokenizer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	if len(p.errors) > 0 {
-		t.Fatalf("%s: Error(s) in ParseProgram(): %v", input, strings.Join(p.errors, ","))
+	if len(p.Errors) > 0 {
+		t.Fatalf("%s: Error(s) in ParseProgram(): %v", input, strings.Join(p.Errors, ","))
 	}
 
 	if len(program.Statements) != 1 {
@@ -564,8 +564,8 @@ func TestFunctionLiteralParsing(t *testing.T) {
 	l := tokenizer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	if len(p.errors) > 0 {
-		t.Fatalf("%s: Error(s) in ParseProgram(): %v", input, strings.Join(p.errors, ","))
+	if len(p.Errors) > 0 {
+		t.Fatalf("%s: Error(s) in ParseProgram(): %v", input, strings.Join(p.Errors, ","))
 	}
 
 	if len(program.Statements) != 1 {
@@ -621,8 +621,8 @@ func TestFunctionParameterParsing(t *testing.T) {
 		l := tokenizer.New(tt.input)
 		p := New(l)
 		program := p.ParseProgram()
-		if len(p.errors) > 0 {
-			t.Fatalf("%s: Error(s) in ParseProgram(): %v", tt.input, strings.Join(p.errors, ","))
+		if len(p.Errors) > 0 {
+			t.Fatalf("%s: Error(s) in ParseProgram(): %v", tt.input, strings.Join(p.Errors, ","))
 		}
 
 		stmt := program.Statements[0].(*ast.ExpressionStatement)
@@ -645,8 +645,8 @@ func TestCallExpressionParsing(t *testing.T) {
 	l := tokenizer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
-	if len(p.errors) > 0 {
-		t.Fatalf("%s: Error(s) in ParseProgram(): %v", input, strings.Join(p.errors, ","))
+	if len(p.Errors) > 0 {
+		t.Fatalf("%s: Error(s) in ParseProgram(): %v", input, strings.Join(p.Errors, ","))
 	}
 
 	if len(program.Statements) != 1 {

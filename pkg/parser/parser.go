@@ -41,7 +41,7 @@ type Parser struct {
 	currentToken *token.Token
 	nextToken    *token.Token
 
-	errors []string
+	Errors []string
 
 	parseFns map[token.TokenType]prefixParseFn
 }
@@ -150,7 +150,7 @@ func (p *Parser) parseExpressionStatement() ast.Statement {
 func (p *Parser) parseExpression(precedence int) ast.Expression {
 	parseFn, ok := p.parseFns[p.currentToken.Type]
 	if !ok {
-		p.errors = append(p.errors, fmt.Sprintf("Unknown token type %s, no parseFn found", p.currentToken.Type))
+		p.Errors = append(p.Errors, fmt.Sprintf("Unknown token type %s, no parseFn found", p.currentToken.Type))
 		return nil
 	}
 	left := parseFn()
@@ -220,7 +220,7 @@ func (p *Parser) peekError(t token.TokenType) bool {
 	if p.nextToken.Type != t {
 		msg := fmt.Sprintf("expected next token to be %s, got %s instead",
 			t, p.nextToken.Type)
-		p.errors = append(p.errors, msg)
+		p.Errors = append(p.Errors, msg)
 		return true
 	}
 	return false
@@ -334,7 +334,7 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	ident, ok := function.(*ast.Identifier)
 	if !ok {
-		p.errors = append(p.errors, fmt.Sprintf("expecting identifier in the beginning of call expression, got: %s", ident))
+		p.Errors = append(p.Errors, fmt.Sprintf("expecting identifier in the beginning of call expression, got: %s", ident))
 		return nil
 	}
 	exp := &ast.CallExpression{Function: ident}
@@ -371,7 +371,7 @@ func (p *Parser) readNextIfNextTypeIs(t token.TokenType) bool {
 	if p.nextToken.Type != t {
 		msg := fmt.Sprintf("expected next token to be %s, got %s instead",
 			t, p.nextToken.Type)
-		p.errors = append(p.errors, msg)
+		p.Errors = append(p.Errors, msg)
 		return false
 	}
 	p.readNextToken()
@@ -382,7 +382,7 @@ func (p *Parser) readNextIfCurrentTypeIs(t token.TokenType) bool {
 	if p.currentToken.Type != t {
 		msg := fmt.Sprintf("expected next token to be %s, got %s instead",
 			t, p.nextToken.Type)
-		p.errors = append(p.errors, msg)
+		p.Errors = append(p.Errors, msg)
 		return false
 	}
 	p.readNextToken()

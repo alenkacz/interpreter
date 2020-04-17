@@ -3,7 +3,8 @@ package repl
 import (
 	"bufio"
 	"fmt"
-	"github.com/alenkacz/interpreter-book/pkg/token"
+	"github.com/alenkacz/interpreter-book/pkg/eval"
+	"github.com/alenkacz/interpreter-book/pkg/parser"
 	"github.com/alenkacz/interpreter-book/pkg/tokenizer"
 	"io"
 )
@@ -22,10 +23,23 @@ func Start(in io.Reader, out io.Writer) {
 		}
 
 		line := scanner.Text()
-		fmt.Print(line)
 		t := tokenizer.New(line)
-		for tok := t.NextToken(); tok.Type != token.EOF; tok = t.NextToken() {
-			fmt.Fprintf(out, "%+v\n", tok)
+		p := parser.New(t)
+		ast := p.ParseProgram()
+
+		if len(p.Errors) != 0 {
+			printParserErrors(out, p.Errors)
+			continue
 		}
+
+		fmt.Fprintf(out, "%s\n", eval.Eval(ast).Print())
+	}
+}
+
+func printParserErrors(out io.Writer, errors []string) {
+	io.WriteString(out, "Woops! An error while parsing the program!\n")
+	io.WriteString(out, " parser errors:\n")
+	for _, msg := range errors {
+		io.WriteString(out, "\t"+msg+"\n")
 	}
 }
