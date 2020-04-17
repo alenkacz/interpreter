@@ -103,7 +103,7 @@ func (p *Parser) parseNextStatement() ast.Statement {
 
 func (p *Parser) parseReturnStatement() ast.Statement {
 	p.readNextToken()
-	
+
 	expression := p.parseExpression(LOWEST)
 	if !p.readNextIfNextTypeIs(token.SEMICOLON) {
 		return nil
