@@ -34,6 +34,20 @@ func Eval(node ast.Node) object.Object {
 		left := Eval(infix.Left)
 		right := Eval(infix.Right)
 		return evalInfixOperator(left, right, infix.Operator)
+	case *ast.IfExpression:
+		ifExp, _ := node.(*ast.IfExpression)
+		cond := Eval(ifExp.Condition)
+		if cond == object.TRUE {
+			return Eval(ifExp.Block)
+		} else if ifExp.Alternative != nil {
+			return Eval(ifExp.Alternative)
+		} else {
+			return object.NULL
+		}
+	case *ast.BlockStatement:
+		return evalBlockStatement(node.(*ast.BlockStatement))
+	case *ast.ReturnStatement:
+		return &object.ReturnValue{Eval(node.(*ast.ReturnStatement).ReturnValue)}
 	case *ast.ExpressionStatement:
 		exp, _ := node.(*ast.ExpressionStatement)
 		return Eval(exp.Expression)
@@ -43,6 +57,8 @@ func Eval(node ast.Node) object.Object {
 		for _, stmt := range program.Statements {
 			result = Eval(stmt)
 			switch result.(type) {
+			case *object.ReturnValue:
+				return result.(*object.ReturnValue).Value
 			case *object.Error:
 				return result
 			}
@@ -50,6 +66,20 @@ func Eval(node ast.Node) object.Object {
 		return result
 	}
 	return nil
+}
+
+func evalBlockStatement(block *ast.BlockStatement) object.Object {
+	var result object.Object
+	for _, stmt := range block.Statements {
+		result = Eval(stmt)
+		switch result.(type) {
+		case *object.ReturnValue:
+			return result
+		case *object.Error:
+			return result
+		}
+	}
+	return result
 }
 
 func evalInfixOperator(left object.Object, right object.Object, operator string) object.Object {

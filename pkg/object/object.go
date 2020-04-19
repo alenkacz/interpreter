@@ -7,12 +7,15 @@ type ObjectType string
 const (
 	INTEGER = "INTEGER"
 	BOOLEAN = "BOOLEAN"
+	NULL_TYPE = "NULL"
 	ERROR = "ERROR"
-)
+	RETURN_TYPE = "RETURN"
+	)
 
 var (
 	TRUE = &Boolean{Value: true}
 	FALSE = &Boolean{Value: false}
+	NULL = &Null{}
 )
 
 type Object interface {
@@ -40,3 +43,16 @@ type Error struct {
 
 func (*Error) Type() ObjectType { return ERROR }
 func (b *Error) Print() string  { return fmt.Sprintf("%s", b.Message) }
+
+type Null struct {
+}
+
+func (*Null) Type() ObjectType { return NULL_TYPE }
+func (*Null) Print() string  { return "null" }
+
+type ReturnValue struct {
+	Value Object
+}
+
+func (*ReturnValue) Type() ObjectType { return RETURN_TYPE }
+func (r *ReturnValue) Print() string  { return r.Value.Print() }
