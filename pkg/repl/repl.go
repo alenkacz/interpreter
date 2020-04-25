@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/alenkacz/interpreter-book/pkg/eval"
+	"github.com/alenkacz/interpreter-book/pkg/object"
 	"github.com/alenkacz/interpreter-book/pkg/parser"
 	"github.com/alenkacz/interpreter-book/pkg/tokenizer"
 	"io"
@@ -32,7 +33,7 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		fmt.Fprintf(out, "%s\n", eval.Eval(ast).Print())
+		fmt.Fprintf(out, "%s\n", eval.Eval(ast, object.NewEnvironment()).Print())
 	}
 }
 

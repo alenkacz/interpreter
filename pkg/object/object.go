@@ -1,6 +1,11 @@
 package object
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+	"github.com/alenkacz/interpreter-book/pkg/ast"
+	"strings"
+)
 
 type ObjectType string
 
@@ -10,6 +15,7 @@ const (
 	NULL_TYPE = "NULL"
 	ERROR = "ERROR"
 	RETURN_TYPE = "RETURN"
+	FUNCTION = "FUNCTION"
 	)
 
 var (
@@ -56,3 +62,27 @@ type ReturnValue struct {
 
 func (*ReturnValue) Type() ObjectType { return RETURN_TYPE }
 func (r *ReturnValue) Print() string  { return r.Value.Print() }
+
+type Function struct {
+	Environment *Environment
+	Params []*ast.Identifier
+	Block *ast.BlockStatement
+}
+
+func (*Function) Type() ObjectType { return FUNCTION }
+func (f *Function) Print() string  {
+	var out bytes.Buffer
+
+	params := []string{}
+	for _, p := range f.Params {
+		params = append(params, p.String())
+	}
+
+	out.WriteString("fn")
+	out.WriteString("(")
+	out.WriteString(strings.Join(params, ", "))
+	out.WriteString(") {\n")
+	out.WriteString(f.Block.String())
+	out.WriteString("\n}")
+
+	return out.String() }

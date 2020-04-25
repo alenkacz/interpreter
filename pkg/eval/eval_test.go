@@ -38,7 +38,7 @@ func testEval(input string) object.Object {
 	l := tokenizer.New(input)
 	p := parser.New(l)
 	program := p.ParseProgram()
-	return Eval(program)
+	return Eval(program, object.NewEnvironment())
 }
 
 func testIntegerObject(t *testing.T, obj object.Object, expected int64, input string) bool {
@@ -127,9 +127,9 @@ func TestErrorHandling(t *testing.T) {
 			"5; true + false; 5",
 			"infix operator + works only with integers. Got BOOLEAN+BOOLEAN",
 		},
-		/*{
+		{
 			"if (10 > 1) { true + false; }",
-			"unknown operator: BOOLEAN + BOOLEAN",
+			"infix operator + works only with integers. Got BOOLEAN+BOOLEAN",
 		},
 		{
 			`
@@ -141,8 +141,8 @@ return true + false;
 return 1;
 }
 `,
-			"unknown operator: BOOLEAN + BOOLEAN",
-		},*/
+			"infix operator + works only with integers. Got BOOLEAN+BOOLEAN",
+		},
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
@@ -238,5 +238,46 @@ f(10);`,
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
 		testIntegerObject(t, evaluated, tt.expected, tt.input)
+	}
+}
+
+func TestFunctionObject(t *testing.T) {
+	input := "fn(x) { x + 2; };"
+
+	evaluated := testEval(input)
+	fn, ok := evaluated.(*object.Function)
+	if !ok {
+		t.Fatalf("object is not Function. got=%T (%+v)", evaluated, evaluated)
+	}
+
+	if len(fn.Params) != 1 {
+		t.Fatalf("function has wrong parameters. Parameters=%+v",
+			fn.Params)
+	}
+
+	if fn.Params[0].String() != "x" {
+		t.Fatalf("parameter is not 'x'. got=%q", fn.Params[0])
+	}
+
+	expectedBody := "(x + 2)"
+
+	if fn.Block.String() != expectedBody {
+		t.Fatalf("body is not %q. got=%q", expectedBody, fn.Block.String())
+	}
+}
+
+func TestLetStatements(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"let a = 5; a;", 5},
+		{"let a = 5 * 5; a;", 25},
+		{"let a = 5; let b = a; b;", 5},
+		{"let a = 5; let b = a; let c = a + b + 5; c;", 15},
+	}
+
+	for _, tt := range tests {
+		testIntegerObject(t, testEval(tt.input), tt.expected, tt.input)
 	}
 }

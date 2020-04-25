@@ -6,7 +6,7 @@ import (
 	"github.com/alenkacz/interpreter-book/pkg/object"
 )
 
-func Eval(node ast.Node) object.Object {
+func Eval(node ast.Node, env *object.Environment) object.Object {
 	switch node.(type) {
 	case *ast.IntegerLiteral:
 		integer, _ := node.(*ast.IntegerLiteral)
@@ -20,7 +20,7 @@ func Eval(node ast.Node) object.Object {
 		}
 	case *ast.PrefixExpression:
 		prefix, _ := node.(*ast.PrefixExpression)
-		value := Eval(prefix.Right)
+		value := Eval(prefix.Right, env)
 		switch prefix.Operator {
 		case "!":
 			return evalBang(value)
@@ -31,31 +31,41 @@ func Eval(node ast.Node) object.Object {
 		}
 	case *ast.InfixExpression:
 		infix, _ := node.(*ast.InfixExpression)
-		left := Eval(infix.Left)
-		right := Eval(infix.Right)
+		left := Eval(infix.Left, env)
+		right := Eval(infix.Right, env)
 		return evalInfixOperator(left, right, infix.Operator)
 	case *ast.IfExpression:
 		ifExp, _ := node.(*ast.IfExpression)
-		cond := Eval(ifExp.Condition)
+		cond := Eval(ifExp.Condition, env)
 		if cond == object.TRUE {
-			return Eval(ifExp.Block)
+			return Eval(ifExp.Block, env)
 		} else if ifExp.Alternative != nil {
-			return Eval(ifExp.Alternative)
+			return Eval(ifExp.Alternative, env)
 		} else {
 			return object.NULL
 		}
 	case *ast.BlockStatement:
-		return evalBlockStatement(node.(*ast.BlockStatement))
+		return evalBlockStatement(node.(*ast.BlockStatement), env)
 	case *ast.ReturnStatement:
-		return &object.ReturnValue{Eval(node.(*ast.ReturnStatement).ReturnValue)}
+		return &object.ReturnValue{Eval(node.(*ast.ReturnStatement).ReturnValue, env)}
 	case *ast.ExpressionStatement:
 		exp, _ := node.(*ast.ExpressionStatement)
-		return Eval(exp.Expression)
+		return Eval(exp.Expression, env)
+	case *ast.LetStatement:
+		evalLetStatement(node.(*ast.LetStatement), env)
+	case *ast.Identifier:
+		identifier := node.(*ast.Identifier)
+		val, ok := env.Get(identifier.Name)
+		if !ok {
+			return newError("identifier not found: " + identifier.Name)
+		}
+
+		return val
 	case *ast.Program:
 		var result object.Object
 		program, _ := node.(*ast.Program)
 		for _, stmt := range program.Statements {
-			result = Eval(stmt)
+			result = Eval(stmt, env)
 			switch result.(type) {
 			case *object.ReturnValue:
 				return result.(*object.ReturnValue).Value
@@ -68,10 +78,14 @@ func Eval(node ast.Node) object.Object {
 	return nil
 }
 
-func evalBlockStatement(block *ast.BlockStatement) object.Object {
+func evalLetStatement(stmt *ast.LetStatement, env *object.Environment) {
+	env.Set(stmt.Identifier.Literal, Eval(stmt.Value, env))
+}
+
+func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) object.Object {
 	var result object.Object
 	for _, stmt := range block.Statements {
-		result = Eval(stmt)
+		result = Eval(stmt, env)
 		switch result.(type) {
 		case *object.ReturnValue:
 			return result
