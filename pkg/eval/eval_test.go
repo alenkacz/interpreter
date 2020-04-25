@@ -38,7 +38,7 @@ func testEval(input string) object.Object {
 	l := tokenizer.New(input)
 	p := parser.New(l)
 	program := p.ParseProgram()
-	return Eval(program, object.NewEnvironment())
+	return Eval(program, object.NewEnvironment(nil))
 }
 
 func testIntegerObject(t *testing.T, obj object.Object, expected int64, input string) bool {
@@ -214,7 +214,7 @@ if (10 > 1) {
 `,
 			10,
 		},
-		/*{
+		{
 			`
 let f = fn(x) {
   return x;
@@ -232,7 +232,7 @@ let f = fn(x) {
 };
 f(10);`,
 			20,
-		},*/
+		},
 	}
 
 	for _, tt := range tests {

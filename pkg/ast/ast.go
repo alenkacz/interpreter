@@ -69,7 +69,6 @@ func (b *BlockStatement) String() string {
 	var buf bytes.Buffer
 	for _, s := range b.Statements {
 		buf.WriteString(s.String())
-		buf.WriteString("\n")
 	}
 	return buf.String()
 }

@@ -61,6 +61,29 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		return val
+	case *ast.FunctionLiteral:
+		funcLiteral := node.(*ast.FunctionLiteral)
+		return &object.Function{
+			Environment: env,
+			Block: funcLiteral.Block,
+			Params: funcLiteral.Params,
+		}
+	case *ast.CallExpression:
+		callExp := node.(*ast.CallExpression)
+		function, ok := env.Get(callExp.Function.Name)
+		if !ok {
+			return newError("identifier not found: " + callExp.Function.Name)
+		}
+		funcLiteral, ok := function.(*object.Function)
+		if !ok {
+			return newError(fmt.Sprintf("expecting function %s but got %T", callExp.Function.Name, function))
+		}
+		closureEnv := object.NewEnvironment(env)
+		for i, param := range callExp.Params {
+			evaluated := Eval(param, env)
+			closureEnv.Set(funcLiteral.Params[i].Name, evaluated)
+		}
+		return Eval(funcLiteral.Block, closureEnv)
 	case *ast.Program:
 		var result object.Object
 		program, _ := node.(*ast.Program)
