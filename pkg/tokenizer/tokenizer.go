@@ -1,6 +1,7 @@
 package tokenizer
 
 import (
+	"bytes"
 	"github.com/alenkacz/interpreter-book/pkg/token"
 )
 
@@ -83,6 +84,9 @@ func (t *Tokenizer) NextToken() token.Token {
 		result = token.Token{token.LT, "<"}
 	case '>':
 		result = token.Token{token.GT, ">"}
+	case '"':
+		str := t.readString()
+		result = token.Token{ token.STRING, str}
 	case 0:
 		result = token.Token{Type: token.EOF}
 	default:
@@ -106,6 +110,18 @@ func (t *Tokenizer) NextToken() token.Token {
 	t.readChar()
 
 	return result
+}
+
+func (t *Tokenizer) readString() string {
+	// TODO support escape sequences
+	var out bytes.Buffer
+	for {
+		t.readChar()
+		if t.currentChar == '"' {
+			return out.String()
+		}
+		out.WriteByte(t.currentChar)
+	}
 }
 
 func isNumber(char byte) bool {

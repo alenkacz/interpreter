@@ -8,6 +8,7 @@ const (
 
 	IDENT = "ident"
 	INT = "int"
+	STRING = "string"
 
 	SEMICOLON = ";"
 	ASSIGN = "="

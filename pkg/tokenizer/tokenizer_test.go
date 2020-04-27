@@ -25,6 +25,7 @@ if (5 < 10) {
 
 10 == 10;
 10 != 9;
+"aaa";
 `
 
  result := []token.Token{
@@ -100,6 +101,8 @@ if (5 < 10) {
 	 {token.INT, "10"},
 	 {token.NOTEQ, "!="},
 	 {token.INT, "9"},
+	 {token.SEMICOLON, ";"},
+	 {token.STRING, "aaa"},
 	 {token.SEMICOLON, ";"},
 	 {token.EOF, ""},
  }

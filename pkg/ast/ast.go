@@ -86,6 +86,14 @@ func (i *IntegerLiteral) String() string {
 	return fmt.Sprintf("%d", i.Value)
 }
 
+type StringLiteral struct {
+	Value string
+}
+func (*StringLiteral) expressionNode() {}
+func (i *StringLiteral) String() string {
+	return i.Value
+}
+
 type Identifier struct {
 	Name string
 }
@@ -162,5 +170,5 @@ func (f *CallExpression) String() string {
 	for _, p := range f.Params {
 		paramExpressions = append(paramExpressions, p.String())
 	}
-	return fmt.Sprintf("%s(%s)", f.Function.Name, strings.Join(paramExpressions, ","))
+	return fmt.Sprintf("%s(%s)", f.Function.Name, strings.Join(paramExpressions, ", "))
 }

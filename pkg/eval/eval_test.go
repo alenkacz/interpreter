@@ -34,6 +34,19 @@ func TestEvalIntegerExpression(t *testing.T) {
 	}
 }
 
+func TestEvalStringExpression(t *testing.T) {
+	tests := []struct {
+		input string
+		expected string
+	}{
+		{"\"aaa\"", "aaa"},
+	}
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		testStringObject(t, evaluated, tt.expected, tt.input)
+	}
+}
+
 func testEval(input string) object.Object {
 	l := tokenizer.New(input)
 	p := parser.New(l)
@@ -49,6 +62,20 @@ func testIntegerObject(t *testing.T, obj object.Object, expected int64, input st
 	}
 	if result.Value != expected {
 		t.Errorf("%s: object has wrong value. got=%d, want=%d",
+			input, result.Value, expected)
+		return false
+	}
+	return true
+}
+
+func testStringObject(t *testing.T, obj object.Object, expected string, input string) bool {
+	result, ok := obj.(*object.String)
+	if !ok {
+		t.Errorf("%s: object is not String. got=%T (%+v)", input, obj, obj)
+		return false
+	}
+	if result.Value != expected {
+		t.Errorf("%s: object has wrong value. got=%s, want=%s",
 			input, result.Value, expected)
 		return false
 	}

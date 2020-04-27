@@ -17,6 +17,7 @@ func TestLetStatements(t *testing.T) {
 		{"let x = 5;", "x", 5},
 		{"let y = true;", "y", true},
 		{"let foobar = y;", "foobar", "y"},
+		{"let y = \"aaa\";", "y", "aaa"},
 	}
 
 	for _, tt := range tests {
@@ -89,6 +90,7 @@ func TestSimpleExpression(t *testing.T) {
 		{"integer", "5;", reflect.TypeOf(&ast.IntegerLiteral{}), "5"},
 		{"identifier", "a;", reflect.TypeOf(&ast.Identifier{}), "a"},
 		{"bool", "true;", reflect.TypeOf(&ast.Boolean{}), "true"},
+		{"string", "\"aaa\";", reflect.TypeOf(&ast.StringLiteral{}), "aaa"},
 	}
 
 	for _, tt := range tests {
@@ -188,6 +190,9 @@ func testLiteralExpression(
 	case int64:
 		return testIntegerLiteral(t, exp, v)
 	case string:
+		if _, ok := exp.(*ast.StringLiteral); ok {
+			return testString(t, exp, v)
+		}
 		return testIdentifier(t, exp, v)
 	case bool:
 		return testBooleanLiteral(t, exp, v)
@@ -206,6 +211,21 @@ func testIntegerLiteral(t *testing.T, exp ast.Expression, value int64) bool {
 		t.Errorf("integ.Value not %d. got=%d", value, integ.Value)
 		return false
 	}
+	return true
+}
+
+func testString(t *testing.T, exp ast.Expression, value string) bool {
+	ident, ok := exp.(*ast.StringLiteral)
+	if !ok {
+		t.Errorf("exp not *ast.StringLiteral. got=%T", exp)
+		return false
+	}
+
+	if ident.Value != value {
+		t.Errorf("ident.Value not %s. got=%s", value, ident.Value)
+		return false
+	}
+
 	return true
 }
 

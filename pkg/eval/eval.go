@@ -11,6 +11,9 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.IntegerLiteral:
 		integer, _ := node.(*ast.IntegerLiteral)
 		return &object.Integer{ Value: integer.Value }
+	case *ast.StringLiteral:
+		str, _ := node.(*ast.StringLiteral)
+		return &object.String{ Value: str.Value }
 	case *ast.Boolean:
 		boolean, _ := node.(*ast.Boolean)
 		if boolean.Value == true {

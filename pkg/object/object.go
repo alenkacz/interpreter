@@ -11,6 +11,7 @@ type ObjectType string
 
 const (
 	INTEGER = "INTEGER"
+	STRING = "STRING"
 	BOOLEAN = "BOOLEAN"
 	NULL_TYPE = "NULL"
 	ERROR = "ERROR"
@@ -42,6 +43,13 @@ type Boolean struct {
 
 func (*Boolean) Type() ObjectType { return BOOLEAN }
 func (b *Boolean) Print() string  { return fmt.Sprintf("%t", b.Value) }
+
+type String struct {
+	Value string
+}
+
+func (*String) Type() ObjectType { return STRING }
+func (i *String) Print() string  { return i.Value }
 
 type Error struct {
 	Message string
