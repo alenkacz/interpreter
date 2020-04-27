@@ -125,12 +125,23 @@ func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) obje
 func evalInfixOperator(left object.Object, right object.Object, operator string) object.Object {
 	switch operator {
 	case "+":
-		leftInt, leftok := left.(*object.Integer)
-		rightInt, rightok := right.(*object.Integer)
-		if !leftok || !rightok {
-			return newError("infix operator + works only with integers. Got %s+%s", left.Type(), right.Type())
+		if left.Type() == object.INTEGER {
+			leftInt, leftok := left.(*object.Integer)
+			rightInt, rightok := right.(*object.Integer)
+			if !leftok || !rightok {
+				return newError("infix operator + works only with integers on both sides. Got %s+%s", left.Type(), right.Type())
+			}
+			return &object.Integer{leftInt.Value + rightInt.Value}
+		} else if left.Type() == object.STRING {
+			leftStr, leftok := left.(*object.String)
+			rightStr, rightok := right.(*object.String)
+			if !leftok || !rightok {
+				return newError("infix operator + works only with strings on both sides. Got %s+%s", left.Type(), right.Type())
+			}
+			return &object.String{leftStr.Value + rightStr.Value}
+		} else {
+			return newError("infix operator + works only with integers and strings. Got %s+%s", left.Type(), right.Type())
 		}
-		return &object.Integer{leftInt.Value + rightInt.Value}
 	case "-":
 		leftInt, leftok := left.(*object.Integer)
 		rightInt, rightok := right.(*object.Integer)
@@ -176,12 +187,24 @@ func evalEqualityExpression(left object.Object, right object.Object, operator st
 		default:
 			return newError("unsupported operator %s%s%s", left.Type(), operator, right.Type())
 		}
-	} else {
+	} else if left.Type() == object.BOOLEAN {
 		switch operator {
 		case "==":
 			return boolResultToObject(left == right)
 		case "!=":
 			return boolResultToObject(left != right)
+		default:
+			return newError("unsupported operator %s%s%s", left.Type(), operator, right.Type())
+		}
+	} else {
+		leftVal := left.(*object.String).Value
+		rightVal := right.(*object.String).Value
+
+		switch operator {
+		case "==":
+			return boolResultToObject(leftVal == rightVal)
+		case "!=":
+			return boolResultToObject(leftVal != rightVal)
 		default:
 			return newError("unsupported operator %s%s%s", left.Type(), operator, right.Type())
 		}

@@ -40,6 +40,7 @@ func TestEvalStringExpression(t *testing.T) {
 		expected string
 	}{
 		{"\"aaa\"", "aaa"},
+		{"\"aaa\" + \"bbb\"", "aaabbb"},
 	}
 	for _, tt := range tests {
 		evaluated := testEval(tt.input)
@@ -107,6 +108,9 @@ func TestEvalBooleanExpression(t *testing.T) {
 		{"(1 < 2) == false", false},
 		{"(1 > 2) == true", false},
 		{"(1 > 2) == false", true},
+		{"\"aaa\" == \"aaa\"", true},
+		{"\"aaa\" == \"bbb\"", false},
+		{"\"aaa\" != \"aaa\"", false},
 
 	}
 	for _, tt := range tests {

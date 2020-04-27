@@ -12,6 +12,7 @@ import (
 
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
+	env := object.NewEnvironment(nil)
 
 	for {
 		fmt.Print(">> ")
@@ -33,7 +34,10 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		fmt.Fprintf(out, "%s\n", eval.Eval(ast, object.NewEnvironment()).Print())
+		result := eval.Eval(ast, env)
+		if result != nil {
+			fmt.Fprintf(out, "%s\n", eval.Eval(ast, env).Print())
+		}
 	}
 }
 
