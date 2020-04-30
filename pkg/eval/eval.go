@@ -40,7 +40,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.IfExpression:
 		ifExp, _ := node.(*ast.IfExpression)
 		cond := Eval(ifExp.Condition, env)
-		if cond == object.TRUE {
+		if isTruthy(cond) {
 			return Eval(ifExp.Block, env)
 		} else if ifExp.Alternative != nil {
 			return Eval(ifExp.Alternative, env)
@@ -58,12 +58,10 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		evalLetStatement(node.(*ast.LetStatement), env)
 	case *ast.Identifier:
 		identifier := node.(*ast.Identifier)
-		val, ok := env.Get(identifier.Name)
-		if !ok {
-			return newError("identifier not found: " + identifier.Name)
+		if builtin, ok := env.Get(identifier.Name); ok {
+			return builtin
 		}
-
-		return val
+		return newError("identifier not found: " + identifier.Name)
 	case *ast.FunctionLiteral:
 		funcLiteral := node.(*ast.FunctionLiteral)
 		return &object.Function{
@@ -74,19 +72,14 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.CallExpression:
 		callExp := node.(*ast.CallExpression)
 		function, ok := env.Get(callExp.Function.Name)
-		if !ok {
-			return newError("identifier not found: " + callExp.Function.Name)
+		if ok {
+			return applyFunction(function, callExp, env)
 		}
-		funcLiteral, ok := function.(*object.Function)
-		if !ok {
-			return newError(fmt.Sprintf("expecting function %s but got %T", callExp.Function.Name, function))
+		builtin, ok := builtins[callExp.Function.Name]
+		if ok {
+			return applyFunction(builtin, callExp, env)
 		}
-		closureEnv := object.NewEnvironment(env)
-		for i, param := range callExp.Params {
-			evaluated := Eval(param, env)
-			closureEnv.Set(funcLiteral.Params[i].Name, evaluated)
-		}
-		return Eval(funcLiteral.Block, closureEnv)
+		return newError(fmt.Sprintf("expecting function %s but got %T", callExp.Function.Name, function))
 	case *ast.Program:
 		var result object.Object
 		program, _ := node.(*ast.Program)
@@ -103,6 +96,59 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	}
 	return nil
 }
+
+func isTruthy(obj object.Object) bool {
+	switch obj {
+	case object.NULL:
+		return false
+	case object.TRUE:
+		return true
+	case object.FALSE:
+		return false
+	default:
+		return true
+	}
+}
+
+func applyFunction(function object.Object, callExp *ast.CallExpression, env *object.Environment) object.Object {
+	switch function.Type() {
+	case object.FUNCTION:
+		funcLiteral, _ := function.(*object.Function)
+		closureEnv := object.NewEnvironment(env)
+		evalArgs := evaluateExpressions(callExp.Params, env)
+		if len(evalArgs) > 0 && evalArgs[0].Type() == object.ERROR {
+			return evalArgs[0]
+		}
+		for i, evaluated := range evalArgs {
+			closureEnv.Set(funcLiteral.Params[i].Name, evaluated)
+		}
+		return Eval(funcLiteral.Block, closureEnv)
+	case object.BUILTINFN:
+		builtin, _ := function.(*object.BuiltIn)
+		evalArgs := evaluateExpressions(callExp.Params, env)
+		if len(evalArgs) > 0 && evalArgs[0].Type() == object.ERROR {
+			return evalArgs[0]
+		}
+		return builtin.Fn(evalArgs...)
+	default:
+		return newError(fmt.Sprintf("expecting function but got %T", function))
+	}
+}
+
+func evaluateExpressions(expressions []ast.Expression, env *object.Environment) []object.Object {
+	var result []object.Object
+	for _, param := range expressions {
+		evaluated := Eval(param, env)
+		if evaluated.Type() == object.ERROR {
+			// return on first error
+			return result
+		}
+		result = append(result, evaluated)
+	}
+	return result
+}
+
+
 
 func evalLetStatement(stmt *ast.LetStatement, env *object.Environment) {
 	env.Set(stmt.Identifier.Literal, Eval(stmt.Value, env))

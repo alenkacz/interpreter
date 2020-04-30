@@ -14,7 +14,7 @@ func NewEnvironment(outer *Environment) *Environment {
 
 func (e *Environment) Get(key string) (Object, bool) {
 	val, ok := e.values[key]
-	if !ok {
+	if !ok && e.outer != nil {
 		return e.outer.Get(key)
 	}
 	return val, ok

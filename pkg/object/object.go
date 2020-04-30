@@ -9,6 +9,8 @@ import (
 
 type ObjectType string
 
+type BuiltinFunction func(args ...Object) Object
+
 const (
 	INTEGER = "INTEGER"
 	STRING = "STRING"
@@ -17,6 +19,7 @@ const (
 	ERROR = "ERROR"
 	RETURN_TYPE = "RETURN"
 	FUNCTION = "FUNCTION"
+	BUILTINFN = "BUILTINFN"
 	)
 
 var (
@@ -93,4 +96,11 @@ func (f *Function) Print() string  {
 	out.WriteString(f.Block.String())
 	out.WriteString("\n}")
 
-	return out.String() }
+	return out.String()
+}
+
+type BuiltIn struct {
+	Fn BuiltinFunction
+}
+func (*BuiltIn) Type() ObjectType { return BUILTINFN }
+func (f *BuiltIn) Print() string  { return "builtin fn" }

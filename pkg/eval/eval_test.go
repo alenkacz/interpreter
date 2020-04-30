@@ -52,7 +52,7 @@ func testEval(input string) object.Object {
 	l := tokenizer.New(input)
 	p := parser.New(l)
 	program := p.ParseProgram()
-	return Eval(program, object.NewEnvironment(nil))
+	return Eval(program, object.NewEnvironment(object.NewEnvironment(nil)))
 }
 
 func testIntegerObject(t *testing.T, obj object.Object, expected int64, input string) bool {
@@ -140,11 +140,11 @@ func TestErrorHandling(t *testing.T) {
 	}{
 		{
 			"5 + true;",
-			"infix operator + works only with integers. Got INTEGER+BOOLEAN",
+			"infix operator + works only with integers on both sides. Got INTEGER+BOOLEAN",
 		},
 		{
 			"5 + true; 5;",
-			"infix operator + works only with integers. Got INTEGER+BOOLEAN",
+			"infix operator + works only with integers on both sides. Got INTEGER+BOOLEAN",
 		},
 		{
 			"-true",
@@ -152,15 +152,15 @@ func TestErrorHandling(t *testing.T) {
 		},
 		{
 			"true + false;",
-			"infix operator + works only with integers. Got BOOLEAN+BOOLEAN",
+			"infix operator + works only with integers and strings. Got BOOLEAN+BOOLEAN",
 		},
 		{
 			"5; true + false; 5",
-			"infix operator + works only with integers. Got BOOLEAN+BOOLEAN",
+			"infix operator + works only with integers and strings. Got BOOLEAN+BOOLEAN",
 		},
 		{
 			"if (10 > 1) { true + false; }",
-			"infix operator + works only with integers. Got BOOLEAN+BOOLEAN",
+			"infix operator + works only with integers and strings. Got BOOLEAN+BOOLEAN",
 		},
 		{
 			`
@@ -172,7 +172,7 @@ return true + false;
 return 1;
 }
 `,
-			"infix operator + works only with integers. Got BOOLEAN+BOOLEAN",
+			"infix operator + works only with integers and strings. Got BOOLEAN+BOOLEAN",
 		},
 	}
 	for _, tt := range tests {
@@ -310,5 +310,36 @@ func TestLetStatements(t *testing.T) {
 
 	for _, tt := range tests {
 		testIntegerObject(t, testEval(tt.input), tt.expected, tt.input)
+	}
+}
+
+func TestBuiltinFunctions(t *testing.T) {
+	tests := []struct {
+		input string
+		expected interface{}
+	}{
+		{`len("")`, 0},
+		{`len("four")`, 4},
+		{`len("hello world")`, 11},
+		{`len(1)`, "argument to `len` not supported, got INTEGER"},
+		{`len("one", "two")`, "wrong number of arguments. got=2, want=1"},
+	}
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		switch expected := tt.expected.(type) {
+		case int:
+			testIntegerObject(t, evaluated, int64(expected), tt.input)
+		case string:
+			errObj, ok := evaluated.(*object.Error)
+			if !ok {
+				t.Errorf("object is not Error. got=%T (%+v)",
+					evaluated, evaluated)
+				continue
+			}
+			if errObj.Message != expected {
+				t.Errorf("wrong error message. expected=%q, got=%q",
+					expected, errObj.Message)
+			}
+		}
 	}
 }
