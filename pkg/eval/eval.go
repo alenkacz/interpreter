@@ -80,6 +80,35 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return applyFunction(builtin, callExp, env)
 		}
 		return newError(fmt.Sprintf("expecting function %s but got %T", callExp.Function.Name, function))
+	case *ast.Array:
+		arr := node.(*ast.Array)
+		var res []object.Object
+		for _, it := range arr.Items {
+			res = append(res, Eval(it, env))
+		}
+		return &object.Array{Elements: res}
+	case *ast.IndexExpression:
+		indexExpression := node.(*ast.IndexExpression)
+		left := Eval(indexExpression.Left, env)
+		if left.Type() == object.ERROR {
+			return left
+		}
+		index := Eval(indexExpression.Index, env)
+		if index.Type() == object.ERROR {
+			return index
+		}
+		switch {
+		case left.Type() == object.ARRAY && index.Type() == object.INTEGER:
+			arrayObject := left.(*object.Array)
+			idx := index.(*object.Integer).Value
+			max := int64(len(arrayObject.Elements) - 1)
+			if idx < 0 || idx > max {
+				return object.NULL
+			}
+			return arrayObject.Elements[idx]
+		default:
+			return newError("index operator not supported: %s", left.Type())
+		}
 	case *ast.Program:
 		var result object.Object
 		program, _ := node.(*ast.Program)

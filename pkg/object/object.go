@@ -20,6 +20,7 @@ const (
 	RETURN_TYPE = "RETURN"
 	FUNCTION = "FUNCTION"
 	BUILTINFN = "BUILTINFN"
+	ARRAY = "ARRAY"
 	)
 
 var (
@@ -104,3 +105,19 @@ type BuiltIn struct {
 }
 func (*BuiltIn) Type() ObjectType { return BUILTINFN }
 func (f *BuiltIn) Print() string  { return "builtin fn" }
+
+type Array struct {
+	Elements []Object
+}
+func (*Array) Type() ObjectType { return ARRAY }
+func (a *Array) Print() string  {
+	var out bytes.Buffer
+	elements := []string{}
+	for _, e := range a.Elements {
+		elements = append(elements, e.Print())
+	}
+	out.WriteString("[")
+	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString("]")
+	return out.String()
+}
