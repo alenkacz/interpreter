@@ -172,3 +172,29 @@ func (f *CallExpression) String() string {
 	}
 	return fmt.Sprintf("%s(%s)", f.Function.Name, strings.Join(paramExpressions, ", "))
 }
+
+type Array struct {
+	Items []Expression
+}
+func (*Array) expressionNode() {}
+func (a *Array) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("[")
+	for i, item := range a.Items {
+		buf.WriteString(item.String())
+		if i < len(a.Items) - 1 {
+			buf.WriteString(", ")
+		}
+	}
+	buf.WriteString("]")
+	return buf.String()
+}
+
+type IndexExpression struct {
+	Left Expression
+	Index Expression
+}
+func (*IndexExpression) expressionNode() {}
+func (i *IndexExpression) String() string {
+	return fmt.Sprintf("(%s[%s])", i.Left.String(), i.Index.String())
+}

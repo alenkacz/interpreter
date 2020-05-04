@@ -10,6 +10,7 @@ import (
 
 type (
 	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression
 )
 
 const (
@@ -21,6 +22,7 @@ const (
 	PRODUCT     // *
 	PREFIX      // -X or !X
 	CALL        // myFunction(X)
+	INDEX		// array[index]
 )
 
 var precedences = map[token.TokenType]int{
@@ -33,6 +35,7 @@ var precedences = map[token.TokenType]int{
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
 	token.LPAREN:   CALL,
+	token.LBRACKET: INDEX,
 }
 
 type Parser struct {
@@ -43,7 +46,8 @@ type Parser struct {
 
 	Errors []string
 
-	parseFns map[token.TokenType]prefixParseFn
+	prefixParseFns map[token.TokenType]prefixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn
 }
 
 func New(tokenizer *tokenizer.Tokenizer) *Parser {
@@ -51,18 +55,31 @@ func New(tokenizer *tokenizer.Tokenizer) *Parser {
 		tokenizer: tokenizer,
 	}
 
-	p.parseFns = make(map[token.TokenType]prefixParseFn)
-	p.parseFns[token.INT] = p.parseIntegerLiteral
-	p.parseFns[token.STRING] = p.parseStringLiteral
-	p.parseFns[token.IDENT] = p.parseIdentifier
-	p.parseFns[token.TRUE] = p.parseBoolean
-	p.parseFns[token.FALSE] = p.parseBoolean
-	p.parseFns[token.BANG] = p.parsePrefixExpression
-	p.parseFns[token.MINUS] = p.parsePrefixExpression
-	p.parseFns[token.PLUS] = p.parsePrefixExpression
-	p.parseFns[token.LPAREN] = p.parseGroupedExpression
-	p.parseFns[token.IF] = p.parseIfExpression
-	p.parseFns[token.FUNC] = p.parseFuncExpression
+	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.prefixParseFns[token.INT] = p.parseIntegerLiteral
+	p.prefixParseFns[token.STRING] = p.parseStringLiteral
+	p.prefixParseFns[token.IDENT] = p.parseIdentifier
+	p.prefixParseFns[token.TRUE] = p.parseBoolean
+	p.prefixParseFns[token.FALSE] = p.parseBoolean
+	p.prefixParseFns[token.BANG] = p.parsePrefixExpression
+	p.prefixParseFns[token.MINUS] = p.parsePrefixExpression
+	p.prefixParseFns[token.PLUS] = p.parsePrefixExpression
+	p.prefixParseFns[token.LPAREN] = p.parseGroupedExpression
+	p.prefixParseFns[token.IF] = p.parseIfExpression
+	p.prefixParseFns[token.FUNC] = p.parseFuncExpression
+	p.prefixParseFns[token.LBRACKET] = p.parseArray
+
+	p.infixParseFns = make(map[token.TokenType]infixParseFn)
+	p.infixParseFns[token.PLUS] = p.parseInfixExpression
+	p.infixParseFns[token.MINUS] = p.parseInfixExpression
+	p.infixParseFns[token.SLASH] = p.parseInfixExpression
+	p.infixParseFns[token.ASTERISK] = p.parseInfixExpression
+	p.infixParseFns[token.EQ] = p.parseInfixExpression
+	p.infixParseFns[token.NOTEQ] = p.parseInfixExpression
+	p.infixParseFns[token.LT] = p.parseInfixExpression
+	p.infixParseFns[token.GT] = p.parseInfixExpression
+
+	p.infixParseFns[token.LBRACKET] = p.parseArrayIndexExpression
 
 	p.readNextToken()
 	p.readNextToken()
@@ -149,7 +166,7 @@ func (p *Parser) parseExpressionStatement() ast.Statement {
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {
-	parseFn, ok := p.parseFns[p.currentToken.Type]
+	parseFn, ok := p.prefixParseFns[p.currentToken.Type]
 	if !ok {
 		p.Errors = append(p.Errors, fmt.Sprintf("Unknown token type %s, no parseFn found", p.currentToken.Type))
 		return nil
@@ -157,20 +174,30 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	left := parseFn()
 
 	for p.nextToken.Type != token.SEMICOLON && precedence < p.nextPrecedence() {
-		p.readNextToken()
-		precedence := p.currentPrecedence()
-
-		expression := &ast.InfixExpression{
-			Operator: p.currentToken.Literal,
-			Left:     left,
+		infix := p.infixParseFns[p.nextToken.Type]
+		if infix == nil {
+			return left
 		}
 
 		p.readNextToken()
-		expression.Right = p.parseExpression(precedence)
 
-		left = expression
+		left = infix(left)
 	}
 	return left
+}
+
+func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	precedence := p.currentPrecedence()
+
+	expression := &ast.InfixExpression{
+		Operator: p.currentToken.Literal,
+		Left:     left,
+	}
+
+	p.readNextToken()
+	expression.Right = p.parseExpression(precedence)
+
+	return expression
 }
 
 func (p *Parser) currentPrecedence() int {
@@ -338,13 +365,20 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 	return identifiers
 }
 
-func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
-	ident, ok := function.(*ast.Identifier)
-	if !ok {
-		p.Errors = append(p.Errors, fmt.Sprintf("expecting identifier in the beginning of call expression, got: %s", ident))
+func (p *Parser) parseArrayIndexExpression(exp ast.Expression) ast.Expression {
+	result := &ast.IndexExpression{Left: exp}
+	p.readNextToken()
+	result.Index = p.parseExpression(LOWEST)
+
+	if !p.readNextIfNextTypeIs(token.RBRACKET) {
 		return nil
 	}
-	exp := &ast.CallExpression{Function: ident}
+
+	return result
+}
+
+func (p *Parser) parseCallExpression(identifier *ast.Identifier) ast.Expression {
+	exp := &ast.CallExpression{Function: identifier}
 	exp.Params = p.parseCallArguments()
 	return exp
 }
@@ -394,4 +428,33 @@ func (p *Parser) readNextIfCurrentTypeIs(t token.TokenType) bool {
 	}
 	p.readNextToken()
 	return true
+}
+
+func (p *Parser) parseArray() ast.Expression {
+	items := []ast.Expression{}
+
+	if p.nextToken.Type == token.RBRACKET {
+		// empty args
+		p.readNextToken()
+		return &ast.Array{
+			Items: items,
+		}
+	}
+
+	p.readNextToken()
+	items = append(items, p.parseExpression(LOWEST))
+
+	for p.nextToken.Type == token.COMMA {
+		p.readNextToken()
+		p.readNextToken()
+		items = append(items, p.parseExpression(LOWEST))
+	}
+
+	if !p.readNextIfNextTypeIs(token.RBRACKET) {
+		return nil
+	}
+
+	return &ast.Array{
+		Items: items,
+	}
 }

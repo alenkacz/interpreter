@@ -70,6 +70,10 @@ func (t *Tokenizer) NextToken() token.Token {
 		result = token.Token{token.LBRACE, "{"}
 	case '}':
 		result = token.Token{token.RBRACE, "}"}
+	case '[':
+		result = token.Token{token.LBRACKET, "["}
+	case ']':
+		result = token.Token{token.RBRACKET, "]"}
 	case ',':
 		result = token.Token{token.COMMA, ","}
 	case '+':

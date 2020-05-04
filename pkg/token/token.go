@@ -16,6 +16,8 @@ const (
 	RPAREN = ")"
 	LBRACE = "{"
 	RBRACE = "}"
+	LBRACKET = "["
+	RBRACKET = "]"
 	COMMA = ","
 	PLUS = "+"
 	MINUS = "-"
